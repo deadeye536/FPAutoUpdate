@@ -1,6 +1,8 @@
 Facepunch Auto-Update
 =====================
 This userscript will display a notification to the user when there is a new post to a currently opened thread.
+  
+[Install from Github](https://github.com/deadeye536/FPAutoUpdate/raw/master/FPAutoUpdate.user.js)
 
 Installation
 ------------
