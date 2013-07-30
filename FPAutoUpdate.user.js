@@ -11,25 +11,29 @@
 // Webkit users have this feature already
 // Firefox users may have to install plugins to gain this feature
 
-(function($, window) {
-	// We are in our safe zone
+// Obviously I started this rather awake, but I must've done the bulk
+// of this at like 3 AM, I have no idea what's going on half the time
 
-	// Well, they installed the script, assume they want it enabled by default
-	localStorage.FPAutoUpdate_Enabled =
-		localStorage.hasOwnProperty('FPAutoUpdate_Enabled') ?
-		localStorage.FPAutoUpdate_Enabled : true;
-	// Desktop Notifications
-	localStorage.FPAutoUpdate_Notify =
-		localStorage.hasOwnProperty('FPAutoUpdate_Notify') ?
-		(window.webkitNotifications.checkPermission()!=0 ?
-			false : localStorage.FPAutoUpdate_Notify)
-		: window.hasOwnProperty('webkitNotifications');
+(function($, window) {
+	if (!localStorage.hasOwnProperty('FPAutoUpdate_Enabled')) {
+		// Enable by default
+		localStorage.FPAutoUpdate_Enabled = true;
+	}
+	if (!localStorage.hasOwnProperty('FPAutoUpdate_Notify')
+		||!window.hasOwnProperty('webkitNotifications')
+		||window.webkitNotifications.checkPermission()!=0) {
+		// Desktop notifications are disabled by default
+		// Do we support notifications?
+		// Do we have permission?
+		localStorage.FPAutoUpdate_Notify = false;
+	}
 
 	// Append a setting to the 'More' menu
 	// Gee, this is an original idea
 	$('.navbarlink a[href=#]').click(function() {
 		if (!document.getElementById('FPAutoUpdate_Notify')) {
 			var toomany = 0;
+			// We gotta wait for the "more.html" to be fetched and displayed
 			setTimeout(function checkDone() {
 				if ($('#more div').length == 0) {
 					// not loaded, try again
@@ -39,7 +43,7 @@
 					}
 					return;
 				}
-				$('#more div:eq(1)').append($("<br><h2>Thread Auto Update</h2><br>"+
+				$('#more div:eq(1)').append("<br><h2>Thread Auto Update</h2><br>"+
 					'<input type="checkbox"'+
 					(localStorage.FPAutoUpdate_Enabled=='true'?' checked':'')+
 					' id="FPAutoUpdate_Enabled" style="margin-right:16px">'+
@@ -49,7 +53,7 @@
 					(localStorage.FPAutoUpdate_Notify=="true"?' checked':'')+
 					(window.hasOwnProperty('webkitNotifications')?'':' disabled')+
 					' id="FPAutoUpdate_Notify" style="margin-right:16px">'+
-					'<label for="FPAutoUpdate_Notify">Desktop Notifications</label>'));
+					'<label for="FPAutoUpdate_Notify">Desktop Notifications</label>');
 
 				$('#FPAutoUpdate_Enabled, label[for="FPAutoUpdate_Enabled"]').click(function(e) {
 					e.stopPropagation(); // Do not close the menu
@@ -78,14 +82,12 @@
         numnew = 0;
 	// Utility done, time for the meat of the script
 	function doRun() {
-		// Get timestamp of latest post in this thread
 		setTimeout(function checkUpdate() {
 			$.ajax({
 				url      : "/fp_ticker.php?aj=1&lasttime="+lasttime,
 				dataType : "xml",
 				success  : function(tickerContents) {
-					// Filter through the stuff in the ticker, looking for
-					//-- each post.
+					// I have no idea what this does anymore
 					$(tickerContents).find('post').each(function(i, elem) {
 						lasttime = Math.max(lasttime,
 							parseInt($(this).attr('date'), 10));
@@ -102,26 +104,23 @@
 								if (thatthreadid == thisthread) {
 
 									//-----------------------------
-									// Everything around this works
 									//      We got an update!
 									//-----------------------------
-
 									numnew++;
-									// Closures will be the death of me, but screw functions! and the 80 character barrier!
 									if (localStorage.FPAutoUpdate_Notify=="true") {
-										// No notification yet
 										if (notification) {
-												notification.cancel();
+											// Close existing notification, re-create and re-notify
+											notification.cancel();
 										}
 										if (window.webkitNotifications.checkPermission() == 0) {
 											// We are authorized to show the noification
 											notification = window.webkitNotifications.createNotification(
 												'/fp/forums/6.png',
 												'Thread Update!',
-												'1 new post in '+$("#lastelement").text()
+												numnew+' new post'+(numnew>1?'s':'')+' in '+$("#lastelement").text()
 											);
 											notification.onclick = function() {
-												// Load new posts
+												// Load new posts?
 												window.focus();
 												this.cancel();
 												notification = null;
@@ -134,8 +133,7 @@
 							}
 						}
 					});
-					if (localStorage.FPAutoUpdate_Enabled=="true"&&$('#pagination_top').text().indexOf('Last')===-1) {
-						// Allows us to dynamically turn the script off
+					if (localStorage.FPAutoUpdate_Enabled=="true") {
 						setTimeout(checkUpdate, 3000);
 					}
 				}
@@ -147,8 +145,7 @@
 		// Only run if we're on the last page
 		doRun();
 	}
-	// Let's expose some functions to window, so that users may interact by the
-	//-- JS console
+	// Let's expose some functions to window, so that users may interact through the JS console
 	window.FPAutoUpdate = {
 		disable: function() {
 			localStorage.FPAutoUpdate_Enabled = false;
