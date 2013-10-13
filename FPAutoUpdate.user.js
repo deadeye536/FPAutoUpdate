@@ -58,9 +58,6 @@
 				$('#FPAutoUpdate_Enabled, label[for="FPAutoUpdate_Enabled"]').click(function(e) {
 					e.stopPropagation(); // Do not close the menu
 					localStorage.FPAutoUpdate_Enabled = $('#FPAutoUpdate_Enabled').is(':checked');
-					if (localStorage.FPAutoUpdate_Enabled=="true"&&$('#pagination_top').text().indexOf('Last')===-1) {
-						doRun();
-					}
 				});
 
 				$('#FPAutoUpdate_Notify, label[for="FPAutoUpdate_Notify"]').click(function(e) {
@@ -79,72 +76,88 @@
         thisthread = location.href.match(/t=([0-9]*)&?.*/)[1],
         tags = {'&lt;':'<','&gt;':'>','&amp;':'&'},
         notification,
-        numnew = 0;
-	// Utility done, time for the meat of the script
-	function doRun() {
-		setTimeout(function checkUpdate() {
-			$.ajax({
-				url      : "/fp_ticker.php?aj=1&lasttime="+lasttime,
-				dataType : "xml",
-				success  : function(tickerContents) {
-					// I have no idea what this does anymore
-					$(tickerContents).find('post').each(function(i, elem) {
-						lasttime = Math.max(lasttime,
-							parseInt($(this).attr('date'), 10));
-						var a = $(elem).attr('html')
-								.replace(/&lt;|&gt;|&amp;/g, function(match) {
-									return tags[match];
-								}),
-							threadLinks = $(a).find('a');
-						if (threadLinks.length == 3 || threadLinks.length == 4) {
-							// We got a new post entry
-							var thatthread = $(threadLinks[2]).attr('href').match(/t=([0-9]*)&?.*/);
-							if (thatthread !== undefined&&thatthread!=null&&thatthread[1] !== undefined) {
-								var thatthreadid = thatthread[1];
-								if (thatthreadid == thisthread) {
+        numnew = 0,
+        isMaster,
+        masterTries = 0;
 
-									//-----------------------------
-									//      We got an update!
-									//-----------------------------
-									numnew++;
-									if (localStorage.FPAutoUpdate_Notify=="true") {
-										if (notification) {
-											// Close existing notification, re-create and re-notify
-											notification.cancel();
-										}
-										if (window.webkitNotifications.checkPermission() == 0) {
-											// We are authorized to show the noification
-											notification = window.webkitNotifications.createNotification(
-												'/fp/forums/6.png',
-												'Thread Update!',
-												numnew+' new post'+(numnew>1?'s':'')+' in '+$("#lastelement").text()
-											);
-											notification.onclick = function() {
-												// Load new posts?
-												window.focus();
-												this.cancel();
-												notification = null;
-												numnew = 0;
-											}
-											notification.show();
-										}
-									}
+	// Now this is a story all about how my script got flipped, turned upside-down
+	window.setInterval(function() {
+		if (isMaster === true) {
+			// Keep dominance
+			localStorage.FPAutoUpdate_MasterCheck = null;
+		} else {
+			// Challenge dominance
+			if (localStorage.FPAutoUpdate_MasterCheck == thisthread) {
+				if (masterTries == 0) {
+					masterTries++
+					return;
+				} else {
+					// We are the new master!
+					isMaster = true;
+				}
+			} else {
+				localStorage.FPAutoUpdate_MasterCheck = thisthread;
+			}
+		}
+	}, 4000+(1000*Math.random()));
+	// Now it's time to listen, both the master and the slave do this for simplicity
+	window.setInterval(function() {
+		// Fucking outdated jQuery
+		var tickerContents = $(localStorage.tickerContents);
+		$(tickerContents).find('post').each(function(i, elem) {
+			lasttime = Math.max(lasttime,
+				parseInt($(this).attr('date'), 10));
+			var a = $(elem).attr('html')
+					.replace(/&lt;|&gt;|&amp;/g, function(match) {
+						return tags[match];
+					}),
+				threadLinks = $(a).find('a');
+			if (threadLinks.length == 3 || threadLinks.length == 4) {
+				// We got a new post entry
+				var thatthread = $(threadLinks[2]).attr('href').match(/t=([0-9]*)&?.*/);
+				if (thatthread !== undefined&&thatthread!=null&&thatthread[1] !== undefined) {
+					var thatthreadid = thatthread[1];
+					if (thatthreadid == thisthread) {
+						//-----------------------------
+						//      We got an update!
+						//-----------------------------
+						numnew++;
+						if (localStorage.FPAutoUpdate_Notify=="true") {
+							if (notification) {
+								// Close existing notification, re-create and re-notify
+								notification.cancel();
+							}
+							if (window.webkitNotifications.checkPermission() == 0) {
+								// We are authorized to show the noification
+								notification = window.webkitNotifications.createNotification(
+									'/fp/forums/6.png',
+									'Thread Update!',
+									numnew+' new post'+(numnew>1?'s':'')+' in '+$("#lastelement").text()
+								);
+								notification.onclick = function() {
+									// Load new posts?
+									window.focus();
+									this.cancel();
+									notification = null;
+									numnew = 0;
 								}
+								notification.show();
 							}
 						}
-					});
-					if (localStorage.FPAutoUpdate_Enabled=="true") {
-						setTimeout(checkUpdate, 3000);
 					}
 				}
-			});
-		}, 5000);
-		// Create the container that will hold the "X new posts"
-	}
-	if (localStorage.FPAutoUpdate_Enabled=="true"&&$('#pagination_top').text().indexOf('Last')===-1) {
-		// Only run if we're on the last page
-		doRun();
-	}
+			}
+		});
+		if (isMaster&&localStorage.FPAutoUpdate_Enabled=="true") {
+			$.ajax({
+				url			: "/fp_ticker.php?aj=1&lasttime="+lasttime,
+				dataType	: "text",
+				success		: function(data) {
+					localStorage.setItem('tickerContents', data);
+				}
+			});	
+		}
+	}, 500);
 	// Let's expose some functions to window, so that users may interact through the JS console
 	window.FPAutoUpdate = {
 		disable: function() {
@@ -153,11 +166,13 @@
 		enable: function() {
 			localStorage.FPAutoUpdate_Enabled = true;
 		},
+		isMaster: function() {
+			return isMaster;
+		},
 		debug: {
 			threadid: thisthread,
 			initlasttime: lasttime,
 			lasttime: lasttime
 		}
 	}
-
 }(unsafeWindow.jQuery, unsafeWindow));
