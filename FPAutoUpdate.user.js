@@ -1,10 +1,13 @@
 // ==UserScript==
 // @name         Facepunch Auto-Update
 // @namespace    https://deadworks.me
-// @version      0.1
+// @version      0.5
 // @description  enter something useful
 // @match        http://*facepunch.com/showthread.php?t=*
 // @license      WTFPL
+// @run-at		 document-end
+// @downloadURL	 http://userscripts.org/scripts/source/166339.user.js
+// @updateURL	 http://userscripts.org/scripts/source/166339.user.js
 // ==/UserScript==
 
 // This utilizes Desktop Notifications
