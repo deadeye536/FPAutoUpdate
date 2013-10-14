@@ -2,7 +2,7 @@
 // @name         Facepunch Auto-Update
 // @namespace    https://deadworks.me
 // @version      0.5
-// @description  enter something useful
+// @description  Notifies you of new posts in the currently viewed thread.
 // @match        http://*facepunch.com/showthread.php?t=*
 // @license      WTFPL
 // @run-at		 document-end
