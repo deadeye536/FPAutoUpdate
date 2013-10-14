@@ -158,9 +158,17 @@
 								'width': '150px',
 								'height': '30px',
 								'background': '#FFFFFF',
-								'margin-left': '-2px'
+								'margin-left': '-2px',
+								'text-align': 'center',
+								'font-weight': 'bold',
+								'line-height': '30px',
+								'font-size': '15px'
 							}).text(numnew+' new post'+(numnew>1?'s!':'!'))
-							.addClass('FPAU_NewPost').appendTo('body');
+							.addClass('FPAU_NewPost').
+							.click(function() {
+								// Cheap way out
+								window.reload();	
+							}).appendTo('body');
 						}
 					}
 				}
