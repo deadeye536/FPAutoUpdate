@@ -146,6 +146,21 @@
 								}
 								notification.show();
 							}
+						} else {
+							$('.FPAUNewPost').remove();
+							$('<div>').css({
+								'margin-bottom': '-2px',
+								'border': '1px solid black',
+								'border-top-right-radius': '5px',
+								'position': 'fixed',
+								'bottom': 0,
+								'left': 0,
+								'width': '150px',
+								'height': '30px',
+								'background': '#FFFFFF',
+								'margin-left': '-2px'
+							}).text(numnew+' new post'+(numnew>1?'s!':'!'))
+							.addClass('FPAU_NewPost').appendTo('body');
 						}
 					}
 				}
