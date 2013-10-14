@@ -164,7 +164,7 @@
 								'line-height': '30px',
 								'font-size': '15px'
 							}).text(numnew+' new post'+(numnew>1?'s!':'!'))
-							.addClass('FPAU_NewPost').
+							.addClass('FPAU_NewPost')
 							.click(function() {
 								// Cheap way out
 								window.reload();	
